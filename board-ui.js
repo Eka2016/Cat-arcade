@@ -10,6 +10,7 @@ import {createChessOpponent} from './chess-opponent.js';
 import {createCheckersOpponent} from './checkers-opponent.js';
 import {getCheckersReaction} from './checkers-reactions.js';
 import {createGameFooter} from './game-footer.js';
+import {sanitizeChessBoardStyle} from './chess-appearance.js';
 
 const CHESS_RU={k:'король',q:'ферзь',r:'ладья',b:'слон',n:'конь',p:'пешка'};
 const BOARD_RULES={
@@ -17,8 +18,9 @@ const BOARD_RULES={
   checkers:'Русские шашки, вы — белые. Простая шашка ходит по диагонали вперёд и бьёт в обе стороны. Взятие обязательно: пройдите все подсвеченные прыжки одной шашкой. Можно выбрать любую полную цепочку взятий. Дамка ходит далеко; достигнув последнего ряда при взятии, шашка продолжает как дамка. Победа — у соперника нет шашек или ходов. Ничья: три повторения либо 15 ходов каждой стороны только дамками без взятия. Специальные турнирные лимиты окончаний здесь не применяются.',
 };
 
-export function createBoardGame(container,{kind='chess',onChange=()=>{},onFinish=()=>{},onStart=()=>{},onReport=()=>{},onJournal,game:provided,decide,difficulty='normal',onDifficultyChange=()=>{},workerUrl,sceneUrl,characterUrl,characterUrls,woodUrl}={}){
+export function createBoardGame(container,{kind='chess',onChange=()=>{},onFinish=()=>{},onStart=()=>{},onReport=()=>{},onJournal,game:provided,decide,difficulty='normal',onDifficultyChange=()=>{},workerUrl,sceneUrl,characterUrl,characterUrls,woodUrl,boardStyle='wood'}={}){
   const chess=kind==='chess',title=chess?'Шахматы':'Шашки',game=provided||(chess?new ChessGame():new CheckersGame({mandatoryCapture:false}));
+  if(chess)container.dataset.boardStyle=sanitizeChessBoardStyle(boardStyle);else delete container.dataset.boardStyle;
   const sceneSource=sceneUrl||new URL(chess?'./assets/chess-imperial-library.webp?v=1.20.0':'./assets/checkers-apartment-v2.webp',import.meta.url).href,characterSource=characterUrl||new URL('./assets/chess-emperor-reactions.webp?v=1.20.0',import.meta.url).href,getReaction=chess?getChessReaction:getCheckersReaction;
   const checkersFrames=characterUrls||['neutral','thinking','win','lose'].map(mood=>new URL(`./assets/checkers-${mood}-v2.webp`,import.meta.url).href);
   let level=sanitizeBoardDifficulty(difficulty);
@@ -32,7 +34,8 @@ export function createBoardGame(container,{kind='chess',onChange=()=>{},onFinish
   container.append(settingsElement);
   createGameFooter(container,{removeHeader:true,onRestart:restartGame,signal});
   $('.chess-scene').src=sceneSource;for(const [frame,image] of [...container.querySelectorAll('.chess-character-sheet')].entries())image.src=chess?characterSource:checkersFrames[frame];
-  if(!chess)$('.checkers-table').style.setProperty('--checkers-wood',`url("${woodUrl||new URL('./assets/checkers-walnut.webp',import.meta.url).href}")`);
+  if(chess)$('.chess-table').style.setProperty('--chess-wood',`url("${woodUrl||new URL('./assets/domino-luxury-walnut-v1.webp',import.meta.url).href}")`);
+  else $('.checkers-table').style.setProperty('--checkers-wood',`url("${woodUrl||new URL('./assets/checkers-walnut.webp',import.meta.url).href}")`);
   const chessPortrait=createChessPortrait($('.chess-opponent-art'),chess?{}:{isolatedFrames:true,transitionMs:{thinking:300,neutral:360,result:520},thinkingHoldMs:650,neutralDelayMs:80});
   const opponent=decide?null:chess?createChessOpponent({workerUrl}):createCheckersOpponent({workerUrl});
   const positionStamp=()=>chess?game.engine.fen():game.key()+'/'+game.quietKings;
@@ -116,5 +119,5 @@ export function createBoardGame(container,{kind='chess',onChange=()=>{},onFinish
     else if(e.target.closest('.tablegame-new'))restartGame();
   },{signal});
   render();
-  return {settingsElement,resume,pause(){if(destroyed)return;paused=true;clock.setActive(false);cancelDecision();chessPortrait?.setActive(false);render();},hide(){this.pause();visible=false;},focus(){$('.square-board').focus({preventScroll:true});},get stateTag(){return game.status()?'finished':paused?'paused':started?'playing':'ready';},destroy(){clock.destroy();cancelDecision();opponent?.destroy();chessPortrait?.destroy();destroyed=true;abort.abort();container.replaceChildren();}};
+  return {settingsElement,resume,setBoardStyle(value){if(destroyed||!chess)return;container.dataset.boardStyle=sanitizeChessBoardStyle(value);onChange();},pause(){if(destroyed)return;paused=true;clock.setActive(false);cancelDecision();chessPortrait?.setActive(false);render();},hide(){this.pause();visible=false;},focus(){$('.square-board').focus({preventScroll:true});},get stateTag(){return game.status()?'finished':paused?'paused':started?'playing':'ready';},destroy(){clock.destroy();cancelDecision();opponent?.destroy();chessPortrait?.destroy();destroyed=true;abort.abort();container.replaceChildren();}};
 }
