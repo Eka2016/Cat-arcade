@@ -1,8 +1,9 @@
 import {DOMINO_SET} from './domino.js';
 import {pokerCard} from './poker.js';
+import {durakCardText,DURAK_SUITS} from './durak.js';
 import {sanitizeChatSender} from './chat-message.js';
 
-export const GAME_REPORT_TITLES=Object.freeze({dice:'Кости',poker:'Покер',chess:'Шахматы',checkers:'Шашки',domino:'Домино'});
+export const GAME_REPORT_TITLES=Object.freeze({dice:'Кости',poker:'Покер',chess:'Шахматы',checkers:'Шашки',domino:'Домино',durak:'Дурак'});
 const PIECES={k:'король',q:'ферзь',r:'ладья',b:'слон',n:'конь',p:'пешка'};
 const PIECE_GROUPS={k:'короли',q:'ферзи',r:'ладьи',b:'слоны',n:'кони',p:'пешки'};
 const TAKEN={k:'короля',q:'ферзя',r:'ладьи',b:'слона',n:'коня',p:'пешки'};
@@ -66,6 +67,15 @@ function dominoActionText(action){
   return action.type==='play'?`Выложена костяшка ${tile(action.id)} ${action.side==='left'?'слева':'справа'}.`:action.type==='draw'?`Взято с базара костяшек: ${action.count}.`:'Пропущен ход: подходящей костяшки нет, базар пуст.';
 }
 
+const durakCards=ids=>ids.map(durakCardText).join(', ')||'нет карт';
+function durakActionText(m){
+  if(!m)return 'Игрок ещё не сделал хода.';
+  if(m.type==='attack')return `${m.throwIn?'Подкинута карта':'Атака'} ${durakCardText(m.card)}.`;
+  if(m.type==='defend')return `Карта ${durakCardText(m.attack)} отбита картой ${durakCardText(m.card)}.`;
+  if(m.type==='take')return 'Объявлено взятие всех карт со стола.';
+  return `${m.taking?'Подкидывание завершено, соперник забирает стол.':'Бито, атака завершена.'}${m.lastCard===null?'':` Последняя сыгранная карта: ${durakCardText(m.lastCard)}.`}`;
+}
+
 export function gameJournalText(kind,game){
   const entries=game.journal||[];if(!entries.length)return '';
   const who=m=>m.player===0?'Игрок':'Соперник';
@@ -80,6 +90,13 @@ export function gameJournalText(kind,game){
       else if(m.type==='refund')text=`Раздача ${m.hand}: ${m.player===0?'игроку':'сопернику'} возвращена непокрытая часть ставки: ${m.amount}.`;
       else if(m.type==='settle')text=`Раздача ${m.hand}: ${OUTCOMES[outcome(m.winner)].toLowerCase()}, банк ${m.pot}. `+(m.reason==='fold'?`${m.winner===0?'Соперник':'Игрок'} — пас, закрытые карты не раскрывались.`:`Вскрытие: игрок ${cards(m.shownHands[0])} (${m.combinations[0]}), соперник ${cards(m.shownHands[1])} (${m.combinations[1]}).`)+` Фишки ${m.stacks[0]} : ${m.stacks[1]}.${m.matchFinished?' Матч завершён.':''}`;
       else text=`Раздача ${m.hand}, ${who(m).toLowerCase()}: ${pokerActionText(m)}`;
+    }else if(kind==='durak'){
+      if(m.type==='deal')text=`Колода 36 карт. Открытый козырь ${durakCardText(m.trumpCard)}. Карты игрока: ${durakCards(m.hand)}. Первым атакует ${m.attacker===0?'игрок':'соперник'}. Карты соперника закрыты.`;
+      else if(m.type==='draw')text=who(m)+`: добор ${m.count} карт${m.player===0?'; '+durakCards(m.cards):'; карты закрыты'}.`;
+      else if(m.type==='pickup')text=who(m)+`: забраны карты стола — ${durakCards(m.cards)}. Следующий ход пропущен.`;
+      else if(m.type==='beaten')text=`Заход ${m.bout}: бито — ${durakCards(m.cards)}. Следующим атакует ${m.player===0?'игрок':'соперник'}.`;
+      else if(m.type==='finish')text=`${OUTCOMES[outcome(m.winner)]}. Колода пуста, ${m.winner===null?'оба игрока без карт':(m.winner===0?'соперник':'игрок')+' остался с картами'}.`;
+      else text=`Заход ${m.bout}, ${who(m).toLowerCase()}: ${durakActionText(m)}`;
     }else if(kind==='domino')text=m.type==='finish'?`${OUTCOMES[outcome(m.winner)]}. ${m.reason==='empty'?'Все костяшки победителя выложены.':`Блокировка, очки ${m.scores[0]} : ${m.scores[1]}.`}`:who(m)+': '+dominoActionText(m)+(m.type==='draw'&&m.tiles.length?` Костяшки игрока: ${m.tiles.map(tile).join(', ')}.`:'')+(m.type==='play'?` Открытые концы ${m.ends.join(' и ')}.`:'');
     return `${i+1}. ${text}`;
   });
@@ -119,6 +136,11 @@ export function makeGameResult(kind,game){
     if(!game.result)return null;winner=game.result.winner;lastMove=dominoActionText(game.lastPlayerAction);
     details=game.result.reason==='empty'?`${winner===0?'Игрок':'Соперник'} выложил все костяшки.`:`Партия заблокирована. Очки на руках: игрок ${game.result.scores[0]}, соперник ${game.result.scores[1]}; меньшая сумма побеждает.`;
     position=`Цепочка слева направо: ${game.chain.map(t=>`${t.a}–${t.b}`).join(' | ')}.\nУ игрока: ${game.hands[0].map(tile).join(', ')||'нет костяшек'}.\nУ соперника после раскрытия: ${game.hands[1].map(tile).join(', ')||'нет костяшек'}.\nВ базаре осталось: ${game.stock.length}.`;
+  }else if(kind==='durak'){
+    if(!game.result)return null;winner=game.result.winner;lastMove=durakActionText(game.lastPlayerAction);
+    details=`Подкидной дурак, один на один, 36 карт. Козырь ${DURAK_SUITS[game.trump]}. `+(winner===null?'Оба избавились от карт в последнем заходе.':`${winner===0?'Игрок':'Соперник'} избавился от карт; ${winner===0?'соперник':'игрок'} остался с картами.`);
+    position=`Карты игрока: ${durakCards(game.hands[0])}.\nКарты соперника после окончания партии: ${durakCards(game.hands[1])}.\nВ колоде: ${game.stock.length}. В бито: ${game.discard.length}.\nПоследний стол: `+(game.lastBout?.pairs.map(p=>`${durakCardText(p.attack)}${p.defense===null?' (не отбита)':' / '+durakCardText(p.defense)}`).join('; ')||'пусто')+`. ${game.lastBout?.taking?'Карты стола забраны.':'Карты стола ушли в бито.'}`;
+    recentMoves=game.journal.filter(m=>['attack','defend','take','pass'].includes(m.type)).slice(-6).map(m=>`${m.player===0?'Игрок':'Соперник'}: ${durakActionText(m)}`).join('\n');
   }else return null;
   return sanitizeGameResult({game:kind,outcome:outcome(winner),lastMove,details,position,recentMoves,journal:gameJournalText(kind,game),journalEntries:game.journal.length});
 }

@@ -2,17 +2,24 @@ import {DndError,dndChatText,dndSceneStamp} from './dnd.js';
 import {sanitizeGameReport,gameReportChatText} from './game-report.js';
 import {arcadeChatMessage,sanitizeChatSender} from './chat-message.js';
 import {truthChatText} from './truth-dare.js';
+import {createIdleSave} from './idle-save.js';
 
 // Weak references keep an unsaved native message recognizable across an
 // extension disable/enable cycle without storing chat content anywhere else.
+const appendStages=new WeakMap();
 const pendingSaves=new WeakSet(),activeChatSaves=new WeakSet(),saveObservers=new Set();
 
 /** Only public chat/generation APIs are accessed. No transport, secrets, or connection settings. */
 export function createTavernStoryBridge({getContext=()=>globalThis.SillyTavern?.getContext?.(),document:doc=globalThis.document}={}){
-  let destroyed=false,inFlight=false,generating=false,sending=false,chatRevision=0,stops=0;
+  let destroyed=false,inFlight=false,generating=false,sending=false,chatRevision=0,stops=0,active=true,dirty=false;
   const listeners=new Set(),subscriptions=[];
   const context=()=>{try{return getContext()||null;}catch{return null;}};
-  const notify=change=>{for(const fn of listeners)try{fn(change);}catch{ /* A view callback must not alter a generation. */ }};
+  const idleSave=createIdleSave({isBusy:()=>busy(context()),onError:()=>console.warn('[Paw Arcade] Не удалось сохранить настройки после завершения генерации.')});
+  const notify=change=>{
+    if(destroyed)return;idleSave.wake();
+    if(!active&&!['chat-renamed','chat-changed'].includes(change?.type)){dirty=true;return;}
+    for(const fn of listeners)try{fn(change);}catch{ /* A view callback must not alter a generation. */ }
+  };
   saveObservers.add(notify);
   function identity(ctx){
     if(!ctx||!Array.isArray(ctx.chat))return null;
@@ -34,7 +41,7 @@ export function createTavernStoryBridge({getContext=()=>globalThis.SillyTavern?.
   bind('GENERATION_STARTED',(_type,_options,dryRun)=>{if(!dryRun){generating=true;notify();}});
   for(const name of ['GENERATION_ENDED','GENERATION_STOPPED'])bind(name,()=>{generating=false;notify();});
   bind('GENERATION_STOPPED',()=>{stops++;});
-  bind('CHAT_CHANGED',()=>{chatRevision++;notify();});
+  bind('CHAT_CHANGED',()=>{chatRevision++;notify({type:'chat-changed'});});
   bind('CHAT_RENAMED',change=>{
     if(!change||typeof change.oldFileName!=='string'||typeof change.newFileName!=='string')return;
     const group=!!change.groupId,owner=group?change.groupId:change.avatarId;
@@ -47,7 +54,7 @@ export function createTavernStoryBridge({getContext=()=>globalThis.SillyTavern?.
     if([prefix+from,prefix+to].includes(identity(context())))chatRevision++;
     notify({type:'chat-renamed',fromKey:prefix+from,toKey:prefix+to});
   });
-  for(const name of ['MESSAGE_SENT','MESSAGE_RECEIVED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED'])bind(name,notify);
+  for(const name of ['MESSAGE_SENT','MESSAGE_RECEIVED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED'])bind(name,()=>{if(generating){dirty=true;return;}notify();});
   function capture(){
     if(destroyed)throw new DndError('CLOSED');
     const ctx=context(),key=identity(ctx);if(!key)throw new DndError('NO_CHAT');
@@ -57,9 +64,9 @@ export function createTavernStoryBridge({getContext=()=>globalThis.SillyTavern?.
   function isCurrent(token){try{const ctx=context();return !destroyed&&!!token&&token.revision===chatRevision&&identity(ctx)===token.key&&ctx.chat===token.chat&&signature(ctx)===token.signature;}catch{return false;}}
   function assertCurrent(token){if(!isCurrent(token))throw new DndError('STALE');}
   function info(){
-    const ctx=context(),key=identity(ctx);
-    const reason=!key?'NO_CHAT':typeof ctx.generateQuietPrompt!=='function'?'NO_API':ctx.onlineStatus==='no_connection'?'OFFLINE':busy(ctx)?'BUSY':null;
-    return {key,revision:chatRevision,available:!reason,reason,busy:busy(ctx),demo:false,canAppend:!!key&&typeof ctx?.addOneMessage==='function'&&typeof ctx?.saveChat==='function'};
+    const ctx=context(),key=identity(ctx),pending=busy(ctx);
+    const reason=!key?'NO_CHAT':typeof ctx.generateQuietPrompt!=='function'?'NO_API':ctx.onlineStatus==='no_connection'?'OFFLINE':pending?'BUSY':null;
+    return {key,revision:chatRevision,available:!reason,reason,busy:pending,demo:false,canAppend:!!key&&typeof ctx?.addOneMessage==='function'&&typeof ctx?.saveChat==='function'};
   }
   const messageFor=(kind,id)=>typeof id==='string'?context()?.chat?.find(m=>m?.extra?.['paw_arcade_'+kind]?.id===id):null;
   function savedInfo(kind,id){const message=messageFor(kind,id);return message&&!pendingSaves.has(message)?message.extra['paw_arcade_'+kind]:null;}
@@ -74,19 +81,45 @@ export function createTavernStoryBridge({getContext=()=>globalThis.SillyTavern?.
     const message=existing||build();sending=true;activeChatSaves.add(token.chat);notify();
     try{
       assertCurrent(token);
-      if(!existing){
-        ctx.chat.push(message);pendingSaves.add(message);ctx.addOneMessage(message);
+      if(!existing){ctx.chat.push(message);pendingSaves.add(message);}
+      if(ctx.chatMetadata)ctx.chatMetadata.tainted=true;
+      let stages=appendStages.get(message);
+      if(!stages){stages={announced:false,renderAttempted:false,rendered:false,renderAnnounced:false};appendStages.set(message,stages);}
+      const assertOwner=(allowDestroyed=false)=>{
+        const current=context();
+        if((destroyed&&!allowDestroyed)||token.revision!==chatRevision||identity(current)!==token.key||current?.chat!==token.chat||!token.chat.includes(message))throw new DndError('STALE');
+      };
+      const emit=(name,...args)=>{
+        const type=events?.[name];if(!type||typeof source?.emit!=='function')return null;
+        try{return Promise.resolve(source.emit(type,...args)).catch(()=>{});}catch{return null;}
+      };
+      const bot=!message.is_user&&message.extra?.type!=='narrator';
+      if(!stages.announced){
+        stages.announced=true;
+        const result=emit(bot?'MESSAGE_RECEIVED':'MESSAGE_SENT',ctx.chat.indexOf(message),...(bot?['command']:[]));
+        if(result)await result;
       }
-      // A failed save leaves the original message pending. Retry only the
-      // native save, never append or render a second copy of that message.
-      if(destroyed||token.revision!==chatRevision||identity(context())!==token.key||context()?.chat!==token.chat)throw new DndError('STALE');
-      await ctx.saveChat();pendingSaves.delete(message);
+      assertOwner();
+      // A renderer may insert DOM before throwing; never render twice on retry.
+      if(!stages.renderAttempted){stages.renderAttempted=true;ctx.addOneMessage(message);stages.rendered=true;}
+      assertOwner();
+      if(stages.rendered&&!stages.renderAnnounced){
+        stages.renderAnnounced=true;
+        const result=emit(bot?'CHARACTER_MESSAGE_RENDERED':'USER_MESSAGE_RENDERED',ctx.chat.indexOf(message),...(bot?['command']:[]));
+        if(result)await result;
+      }
+      assertOwner();
+      await ctx.saveChat();
+      // A dispatched save may finish after disable, but not for a different chat.
+      assertOwner(true);pendingSaves.delete(message);appendStages.delete(message);
       return existing?{added:true,duplicate:true}:{added:true};
     }catch(error){throw error instanceof DndError?error:new DndError('APPEND');}
     finally{sending=false;activeChatSaves.delete(token.chat);for(const observer of saveObservers)observer();}
   }
   return {
     info,capture,isCurrent,assertCurrent,
+    setActive(value){if(destroyed||active===!!value)return;active=!!value;if(active&&dirty){dirty=false;notify();}},
+    queueSettingsSave:task=>idleSave.request(task),
     gameInfo(){const value=info();return {...value,canReply:typeof context()?.generate==='function'};},
     hasGameReport:id=>!!savedInfo('game',id),
     gameReportInfo:id=>savedInfo('game',id),
@@ -141,6 +174,6 @@ export function createTavernStoryBridge({getContext=()=>globalThis.SillyTavern?.
       }catch{throw new DndError('GENERATION');}
       finally{inFlight=false;generating=false;notify();}
     },
-    destroy(){destroyed=true;saveObservers.delete(notify);for(const [type,fn] of subscriptions){if(typeof source?.removeListener==='function')source.removeListener(type,fn);else source?.off?.(type,fn);}listeners.clear();},
+    destroy(){destroyed=true;idleSave.destroy();saveObservers.delete(notify);for(const [type,fn] of subscriptions){if(typeof source?.removeListener==='function')source.removeListener(type,fn);else source?.off?.(type,fn);}listeners.clear();},
   };
 }

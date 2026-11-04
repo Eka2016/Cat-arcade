@@ -172,7 +172,7 @@ export function createDndGame(container,{bridge:provided,sceneUrl=new URL('./ass
     }
   }
   function resume(){if(destroyed)return;visible=true;paused=false;sync();clock.setActive(true);animate();render();}
-  const unsubscribe=bridge.subscribe(()=>{if(!destroyed)render();});
+  const unsubscribe=bridge.subscribe(change=>{if(destroyed)return;if(change?.type==='chat-changed'){token=null;key=null;revision=null;serial++;clock.cancel();}if(visible&&!paused)render();});
   // Resume controls on click: changing the DOM during touchstart can suppress a native tap.
   container.addEventListener('keydown',e=>{if(paused&&visible&&!e.target.closest('button,.dnd-collections'))resume();},{capture:true,signal});
   container.addEventListener('input',e=>{if(e.target.matches('.dnd-preset-text')){presetNote='Изменения не сохранены.';renderPresetNote();}},{signal});

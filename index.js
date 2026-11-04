@@ -14,7 +14,7 @@ function context() {
   catch { return null; }
 }
 
-function storage() {
+function storage(bridge) {
   return {
     load() {
       const st = context();
@@ -27,7 +27,7 @@ function storage() {
       if (st?.extensionSettings) {
         const hadPrevious=Object.hasOwn(st.extensionSettings,KEY),previous=st.extensionSettings[KEY];
         st.extensionSettings[KEY] = value;
-        try{st.saveSettingsDebounced?.();}
+        try{const commit=()=>st.saveSettingsDebounced?.();if(bridge?.queueSettingsSave)bridge.queueSettingsSave(commit);else commit();}
         catch(error){if(hadPrevious)st.extensionSettings[KEY]=previous;else delete st.extensionSettings[KEY];throw error;}
       } else {
         try { localStorage.setItem(KEY, JSON.stringify(value)); }
@@ -66,7 +66,7 @@ function addPreferences() {
 function mount() {
   if (!enabled || instance) return;
   const bridge=createTavernStoryBridge({getContext:context});
-  try{instance=createArcade({...storage(),storyBridge:bridge});}
+  try{instance=createArcade({...storage(bridge),storyBridge:bridge});}
   catch(error){bridge.destroy();throw error;}
   generationNotice=createGenerationNotice({getContext:context,
     onComplete:()=>instance?.notifyGenerationComplete(),onClear:()=>instance?.clearGenerationNotice(),

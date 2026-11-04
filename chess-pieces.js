@@ -7,7 +7,10 @@ const cache=new Map();
 export function chessPieceMarkup(type,side=0){
   if(!['k','q','r','b','n','p'].includes(type))return '';
   const key=`${type}:${side===1?1:0}`;if(cache.has(key))return cache.get(key);
-  const p=PALETTES[side===1?1:0];
+  // The original colors remain SVG fallbacks. A skin recolors the same shapes
+  // through inherited variables, without replacing pieces or game state.
+  const material=side===1?'ebony':'ivory';
+  const p=Object.fromEntries(Object.entries(PALETTES[side===1?1:0]).map(([part,color])=>[part,`var(--chess-${material}-${part},${color})`]));
   const stem=`<path fill="${p.body}" d="M18 28h12c-1 9 0 15 5 21H13c5-6 6-12 5-21Z"/><path fill="${p.light}" stroke="none" opacity=".42" d="M20 31h3c0 7-1 11-4 16h-3c2-5 4-10 4-16Z"/>`;
   const heads={
     p:`<circle cx="24" cy="19" r="7.5" fill="${p.body}"/><path d="M17 27h14l2 4H15Z" fill="${p.shade}"/><path d="M20 15q-3 3-1 6" fill="none" stroke="${p.light}" stroke-width="2"/>`,

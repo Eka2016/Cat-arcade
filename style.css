@@ -161,6 +161,12 @@ canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rende
 .tavern-scene { position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;pointer-events:none;user-select:none;-webkit-user-select:none; }
 .tavern-character { position:absolute;left:3%;top:0;width:94%;height:58%;overflow:hidden;pointer-events:none; }
 .opponent-sheet { position:absolute;left:0;top:0;display:block;width:300%;height:200%;max-width:none;max-height:none;image-rendering:pixelated;pointer-events:none;user-select:none;-webkit-user-select:none; }
+/* Atlas cells are 512×320. Keep neighbouring hands and row-edge pixels
+   outside the portrait viewport; these notches do not touch the character. */
+.dice-view[data-reaction="win"] .tavern-character { clip-path:polygon(0 0,70.1171875% 0,70.1171875% .9375%,75.5859375% .9375%,75.5859375% 0,100% 0,100% 100%,0 100%); }
+.dice-view[data-reaction="lose"] .tavern-character { clip-path:polygon(6.25% 0,65.234375% 0,65.234375% .9375%,71.6796875% .9375%,71.6796875% 0,100% 0,100% 100%,6.25% 100%); }
+.dice-view[data-reaction="thinking"] .tavern-character { clip-path:polygon(0 0,63.4765625% 0,63.4765625% .9375%,69.140625% .9375%,69.140625% 0,100% 0,100% 100%,0 100%); }
+
 .dice-turn { position:absolute;top:7px;right:7px;z-index:1;max-width:60%;margin:0;padding:4px 6px;border:1px solid #b4824355;border-radius:2px;text-align:center;color:#f2d6a3;background:#23170ee6;font-size:9px;line-height:1.4; }
 .dice-tray { position:absolute;top:60%;bottom:4%;left:16%;width:68%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8% 12%;align-items:center;justify-items:center;padding:0;border:0;background:transparent;touch-action:manipulation; }
 .dice-tray:focus-visible { outline:2px solid #f2c68f;outline-offset:5px; }
@@ -885,3 +891,152 @@ canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rende
 .domino-view .game-footer .game-restart,.domino-view .game-help > summary { border:1px solid #b18d54;background:linear-gradient(#3b2a1d,#24180f);color:#efd6a4;box-shadow:inset 0 1px 0 #e2c38522,0 1px 2px #0a060380; }
 .domino-view .game-footer .game-restart:hover,.domino-view .game-help > summary:hover { background:#523923; }
 .domino-view .game-help-body { border:1px solid #ad8c57;background:#251a13;color:#e8d8b9;box-shadow:0 5px 15px #08050388; }
+
+/* Durak: separate framed scene/board, with wood or classic green felt. */
+.panel[data-view="menu"]:has(.durak-card) .truth-card { grid-column:auto; }
+.panel[data-view="durak"] { padding:10px;border-radius:11px;border-color:#a4865b;background:linear-gradient(135deg,#34281f,#211a16);box-shadow:inset 0 0 0 1px #ddc59422,0 9px 27px #07130d77; }
+.durak-view { font:12px/1.5 system-ui,sans-serif;color:#eee0c6; }
+.durak-setting { position:relative;isolation:isolate; }
+.durak-table { position:relative;padding:8px;border:1px solid #ad8952;border-radius:14px;background-color:#573722;background-image:linear-gradient(#21140c08,#21140c18),var(--durak-table-texture);background-size:cover;background-position:center top;box-shadow:inset 0 0 0 2px #24170e,inset 0 0 0 3px #a1814666,0 3px 9px #140e1466;outline-offset:-3px; }
+.durak-overview { display:flex;align-items:center;gap:7px;height:64px; }
+.durak-stock { position:relative;flex:0 0 66px;height:58px; }
+.durak-trump { position:absolute;top:7px;left:20px;width:32px;height:45px;transform:rotate(13deg); }
+.durak-stock-back { position:absolute;z-index:1;left:0;top:0;width:34px;height:49px;border:1px solid #ceb783;border-radius:4px;background:repeating-linear-gradient(45deg,#d6b07a55 0 1px,transparent 1px 5px),repeating-linear-gradient(-45deg,#d6b07a55 0 1px,transparent 1px 5px),#526044;box-shadow:inset 0 0 0 3px #46533b,0 2px 3px #21130d; }
+.durak-stock-count { position:absolute;z-index:2;left:9px;top:14px;min-width:18px;padding:1px 2px;border-radius:4px;background:#472b20ed;color:#f4e5bc;text-align:center;font-size:10px; }
+.durak-trump-empty { display:grid;place-items:center;width:100%;height:100%;color:#d5c38d;font:32px/1 Georgia,serif; }
+.durak-rival { flex:1;min-width:0;text-align:center; }
+.durak-rival-label { color:#fff0d3;font-size:10px;text-shadow:0 1px 3px #1b110a; }
+.durak-rival-hand { display:flex;justify-content:center;align-items:center;height:41px;overflow-x:auto;overscroll-behavior:contain;scrollbar-width:thin; }
+.durak-back { flex:0 0 22px;height:32px;margin-left:-8px;border:1px solid #c4b17a;border-radius:3px;background:repeating-linear-gradient(45deg,#d5ad7755 0 1px,transparent 1px 5px),#526044;box-shadow:0 1px 2px #24130d; }
+.durak-back:first-child { margin-left:0; }
+.durak-rival-reveal { flex:0 0 26px;height:37px;margin-right:2px; }
+.durak-discard { flex:0 0 28px;white-space:pre-line;text-align:center;font-size:9px;color:#f0dfc3;text-shadow:0 1px 3px #1b110a; }
+.durak-battle { position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,78px);gap:5px;min-height:171px;padding:5px 2px;border:1px solid #b18d5544;border-radius:8px;background:#170e081c;box-shadow:inset 3px 0 10px #130b071c,inset -3px 0 10px #130b071c; }
+.durak-pair { position:relative;width:62px;height:78px;max-width:100%;margin:auto; }
+.durak-attack,.durak-defense { position:absolute;width:44px;height:62px; }
+.durak-attack { top:0;left:0; }
+.durak-defense { top:15px;left:15px;transform:rotate(5deg); }
+.durak-unbeaten { position:absolute;right:0;bottom:1px;width:12px;height:12px;border:1px solid #dac48a88;border-radius:50%;background:#d8bb5b33; }
+.durak-empty { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;color:#f1d8b9aa;text-shadow:0 1px 2px #1b110a77; }
+.durak-empty > span { font:47px/1 Georgia,serif;opacity:.45; }
+.durak-empty > small { font:10px/1.5 Georgia,serif;letter-spacing:.5px; }
+.durak-face { position:relative;display:block;width:100%;height:100%;overflow:hidden;border:1px solid #d4c194;border-radius:4px;background:linear-gradient(135deg,#fcf5e3,#e9dbbc);color:#3f3429;font-family:Georgia,"Times New Roman",serif;box-shadow:0 2px 3px #25160c88,inset 0 0 0 2px #fff9e755; }
+.durak-red { color:#a1413a; }
+.durak-corner { position:absolute;left:3px;top:2px;display:flex;align-items:center;flex-direction:column;font-size:13px;font-weight:700;line-height:.95; }
+.durak-corner small { font-size:11px;line-height:1.05; }
+.durak-corner-bottom { top:auto;left:auto;right:3px;bottom:2px;transform:rotate(180deg); }
+.durak-pip { position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;line-height:1; }
+.durak-trump .durak-corner,.durak-rival-reveal .durak-corner { font-size:10px;left:2px;top:2px; }
+.durak-trump .durak-corner small,.durak-rival-reveal .durak-corner small { font-size:9px; }
+.durak-trump .durak-corner { left:auto;right:3px; }
+.durak-trump .durak-corner-bottom,.durak-rival-reveal .durak-corner-bottom { display:none; }
+.durak-trump .durak-pip { font-size:18px;left:61%;top:65%; }
+.durak-rival-reveal .durak-pip { font-size:15px;left:66%;top:69%; }
+.durak-status { display:flex;align-items:center;justify-content:center;min-height:30px;padding:4px 0;color:#fff1d2;text-shadow:0 1px 3px #1b110a;text-align:center;font-size:10px; }
+.durak-hand { display:flex;gap:5px;min-height:82px;overflow-x:auto;padding:5px 3px 7px;border:1px solid #ba965d55;border-radius:8px;margin-bottom:5px;background:#21160e44;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b89561 #3c291d;touch-action:pan-x; }
+.durak-choice { position:relative;display:block;flex:0 0 calc((100% - 25px)/6);min-width:36px;max-width:44px;height:63px;padding:0;border:1px solid transparent;border-radius:5px;background:transparent;touch-action:pan-x;transition:transform .15s ease,box-shadow .15s ease; }
+.durak-choice:disabled { opacity:.74; }
+.durak-choice.durak-playable { border-color:#efcc90;box-shadow:0 0 0 1px #e8bf8299,0 0 6px #e4ba7744; }
+.durak-choice.durak-playable:hover { transform:translateY(-2px); }
+.durak-choice:focus-visible { outline-offset:1px; }
+.durak-actions { display:grid;grid-template-columns:1fr 1fr;gap:7px; }
+.durak-actions button { min-height:34px;padding:5px 9px;border:1px solid #b18b56;border-radius:6px;background:linear-gradient(#69754e,#4a593c);color:#f0e6c5;font:600 11px/1.3 system-ui,sans-serif; }
+.durak-actions button:disabled { opacity:.42; }
+.durak-actions button:not(:disabled):hover { background:#7c8861; }
+.durak-view .game-footer { border-color:#b18b5666; }
+.durak-view .game-report-settings-body { padding:6px;border:1px solid #ad895966;border-radius:6px;background:#2c2119; }
+.durak-view .game-help-body { border-color:#b79766;background:#30231a;color:#ede5ca; }
+.durak-view .game-report-text { border-color:#9d7c50;background:#211911;color:#e6e2cb; }
+.durak-view .game-restart { background:#62462e;border-color:#b79766;color:#e5dcbb; }
+@media(prefers-reduced-motion:reduce) { .durak-choice { transition:none; } }
+
+.durak-home { position:relative;aspect-ratio:972/580;margin:0 0 7px;overflow:hidden;border:1px solid #967647;border-radius:10px;background:#858167;contain:layout paint; }
+.durak-home-scene { position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none;-webkit-user-select:none; }
+.durak-character { position:absolute;left:50%;bottom:-14px;height:100%;aspect-ratio:3/2;max-width:100%;transform:translateX(-50%);isolation:isolate;contain:layout paint;pointer-events:none; }
+.durak-character-image { display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-select:none; }
+.durak-view[data-characters="false"] .durak-home { display:none; }
+.durak-view .board-difficulty-label { color:#e2cfab; }
+.durak-view .durak-difficulty { border:1px solid #a58352;border-radius:5px;background:#3a2a1e;color:#f0dfba;font:11px/1.4 system-ui,sans-serif; }
+.durak-difficulty-status { margin:4px 0;color:#edbf9c;font-size:10px; }
+.durak-view .game-report,.durak-view .game-report-settings > summary,.durak-view .game-report-preview summary,.durak-view .game-journal summary { color:#e4cda8; }
+.durak-view .game-report-preview pre,.durak-view .game-journal pre { color:#ebdcc2; }
+.durak-view .game-report-copy { color:#d0ab73; }
+.durak-view .game-report-copy[data-copied="true"],.durak-view .game-report-copy:not(:disabled):hover { color:#ffe1ab;background:#55402a; }
+.durak-view .game-report-reply,.durak-view .game-report-full { accent-color:#c5a069; }
+.durak-view .game-report-send { border-color:#ab8752;background:#715035;color:#f9e4be; }
+.durak-view .game-report-status { color:#d7bd96; }
+.durak-view .game-help > summary { border-color:#a58352;background:#4c3726;color:#ecd2a5; }
+.durak-view .durak-status { color:#fff1d2; }
+@media(max-height:650px) { .durak-home { height:96px;aspect-ratio:auto; } }
+
+.durak-view[data-table-style="green"] .durak-table { border-color:#87a77c;background-color:#214c38;background-image:radial-gradient(ellipse at 50% 20%,#87b49424,transparent 72%),repeating-linear-gradient(45deg,#eef8e604 0 1px,transparent 1px 3px);box-shadow:inset 0 0 0 2px #123325,inset 0 0 0 3px #adc28b66,0 3px 9px #07170e66; }
+.durak-view[data-table-style="green"] .durak-battle { border-color:#9eb68a55;background:#102f2430;box-shadow:inset 3px 0 10px #061a1326,inset -3px 0 10px #061a1326; }
+.durak-view[data-table-style="green"] .durak-hand { border-color:#a1b38966;background:#12362755;scrollbar-color:#9bb77f #183f2c; }
+.durak-view[data-table-style="green"] .durak-stock-back { border-color:#bbcb9e;background-color:#315d40;box-shadow:inset 0 0 0 3px #254831,0 2px 3px #07190f; }
+.durak-view[data-table-style="green"] .durak-back { border-color:#bbcb9e;background-color:#315d40;box-shadow:0 1px 2px #07190f; }
+.durak-view[data-table-style="green"] .durak-stock-count { background:#183626ed; }
+.durak-view[data-table-style="green"] .durak-actions button { border-color:#97ae7e;background:linear-gradient(#527855,#31563c);color:#f2edce; }
+.durak-view[data-table-style="green"] .durak-actions button:not(:disabled):hover { background:#65885f; }
+.durak-view[data-table-style="green"] .durak-choice.durak-playable { border-color:#d8e7ac;box-shadow:0 0 0 1px #c4d79488,0 0 6px #b6d79044; }
+
+/* Chess: dark walnut/ebony and brass; the original fantasy palette remains selectable. */
+.panel[data-view="chess"]:has(.chess-view[data-board-style="wood"]) { border-color:#967647;background:linear-gradient(140deg,#30231b,#1b1511);box-shadow:inset 0 0 0 1px #d9b66b22,0 5px 0 #0f0b08aa,0 14px 30px #09060366;scrollbar-color:#a18452 #211710; }
+.panel[data-view="chess"]:has(.chess-view[data-board-style="wood"]) .window-grip > span { background:#c4a36b99; }
+.chess-view[data-board-style="wood"] { color:#eadcbd;--chess-ivory-body:#e7d9b4;--chess-ivory-shade:#a98b56;--chess-ivory-light:#fff5d6;--chess-ivory-rim:#594123;--chess-ivory-metal:#b79256;--chess-ebony-body:#191613;--chess-ebony-shade:#090907;--chess-ebony-light:#655c4b;--chess-ebony-rim:#d2ad6b;--chess-ebony-metal:#b68d4f; }
+.chess-view[data-board-style="wood"] .chess-table { border-color:#ad8952;border-radius:10px;background:#24190f;box-shadow:inset 0 0 0 2px #1b110c,0 3px 10px #07050377; }
+.chess-view[data-board-style="wood"] .chess-portrait::after { border-top-color:#c7a86b88;background:linear-gradient(#64472b,#24190f); }
+.chess-view[data-board-style="wood"] .chess-opponent-name { border-color:#bd9d6266;background:#24180fbc;color:#eed8af; }
+.chess-view[data-board-style="wood"] .chess-board-frame { background-color:#372417;background-image:linear-gradient(115deg,#09060499,#69482a22 48%,#0e090699),var(--chess-wood);background-size:cover;background-position:center;box-shadow:inset 0 1px #d1ad7088,inset 0 -2px #120b08aa; }
+.chess-view[data-board-style="wood"] .chess-board-frame::before { border-color:#cfad6b88; }
+.chess-view[data-board-style="wood"] .square-board { border-color:#1e140d;outline-color:#ba9459;background-color:#4b3320;background-image:linear-gradient(#0000000a,#00000022),var(--chess-wood);background-size:cover;background-position:center;box-shadow:0 3px 8px #0f0907aa,0 0 0 3px #6e4d2c; }
+.chess-view[data-board-style="wood"] .square-board:focus-visible { outline-color:#ffe0a1; }
+.chess-view[data-board-style="wood"] .board-cell.light-square { background-color:#987449c9; }
+.chess-view[data-board-style="wood"] .board-cell.dark-square { background-color:#2b1d14e0; }
+.chess-view[data-board-style="wood"] .board-cell { background-image:linear-gradient(135deg,#f5dbad12,transparent 52%,#100b0718);box-shadow:inset 0 1px #e6c69b1c,inset 1px 0 #d5ae7a10; }
+.chess-view[data-board-style="wood"] .board-cell.last-square { box-shadow:inset 0 0 0 2px #d1ae6daa; }
+.chess-view[data-board-style="wood"] .board-cell.chosen-square { background-color:#ae8445e8;box-shadow:inset 0 0 0 2px #f5d496; }
+.chess-view[data-board-style="wood"] .board-cell.check-square { background-color:#8f3e31ee;box-shadow:inset 0 0 0 2px #f0b5a0; }
+.chess-view[data-board-style="wood"] .board-cell.legal-square::after { background:#f5d8a6cc;box-shadow:0 0 0 1px #2a1b0eb3; }
+.chess-view[data-board-style="wood"] .board-cell.legal-square:has(.board-piece:not([hidden]))::after { background:transparent;border-color:#ffe0a1;box-shadow:none; }
+.chess-view[data-board-style="wood"] .board-coordinate { color:#2b1c0f; }
+.chess-view[data-board-style="wood"] .dark-square .board-coordinate { color:#e9d3ad; }
+.chess-view[data-board-style="wood"] .tablegame-message { color:#ead8b5; }
+.chess-view[data-board-style="wood"] .game-footer { border-color:#a184524d; }
+.chess-view[data-board-style="wood"] .game-report-settings-body { padding:7px;border:1px solid #94774988;border-radius:5px;background:#211810f5; }
+.chess-view[data-board-style="wood"] .game-report-text { border-color:#856b42;background:#17100b;color:#eadbbd; }
+.chess-view[data-board-style="wood"] .game-report,.chess-view[data-board-style="wood"] .game-report-settings > summary,.chess-view[data-board-style="wood"] .game-report-preview summary,.chess-view[data-board-style="wood"] .game-journal summary { color:#e5d0a6; }
+.chess-view[data-board-style="wood"] .game-report-preview pre,.chess-view[data-board-style="wood"] .game-journal pre { color:#e8d9bc; }
+.chess-view[data-board-style="wood"] .game-report-copy { color:#d2b67e; }
+.chess-view[data-board-style="wood"] .game-report-send { border-color:#b19159;background:#4a3420;color:#f5dfb6; }
+.chess-view[data-board-style="wood"] .game-footer .game-restart,.chess-view[data-board-style="wood"] .game-help > summary { border-color:#b18d54;background:linear-gradient(#3b2a1d,#24180f);color:#efd6a4;box-shadow:inset 0 1px 0 #e2c38522,0 1px 2px #0a060380; }
+.chess-view[data-board-style="wood"] .game-help-body { border-color:#ad8c57;background:#251a13;color:#e8d8b9; }
+.chess-view[data-board-style="wood"] .board-difficulty { border-color:#a18452;background:#302317;color:#eddbb6; }
+.chess-view[data-board-style="wood"] .board-promotion { background:#23180ff2;color:#ead8b5; }
+.chess-view[data-board-style="wood"] .board-promotion button { border-color:#b6945b;background:#47311f;color:#f4dfb4; }
+
+
+
+
+/* Durak 3.0: Domino-style facial expression fades over one static portrait. */
+.durak-emotion-layer { position:absolute;inset:0;opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--durak-emotion-duration,320ms) ease-in-out; }
+@supports ((mask-image:linear-gradient(#000,#000)) or (-webkit-mask-image:linear-gradient(#000,#000))) {
+ .durak-emotion-layer { visibility:visible;-webkit-mask-image:var(--durak-face-mask);mask-image:var(--durak-face-mask);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat; }
+}
+.durak-emotion-layer[data-frame="1"] { -webkit-mask-image:var(--durak-thinking-mask);mask-image:var(--durak-thinking-mask); }
+/* Fixed eye registration in the 1536×1024 source, never animated transforms. */
+.durak-gaze-eye { position:absolute;inset:0; }
+.durak-gaze-left { clip-path:inset(0 54.427083% 0 0); }
+.durak-gaze-right { clip-path:inset(0 0 0 45.572917%); }
+.durak-gaze-left .durak-character-image { transform:translateY(-.87890625%); }
+.durak-gaze-right .durak-character-image { transform:translateY(-1.171875%); }
+@media(prefers-reduced-motion:reduce) { .durak-emotion-layer { transition:none; } }
+
+/* Optional Durak outfit: one static body, the original head and facial layers. */
+.durak-outfit-label { margin:4px 5px 2px; }
+.durak-character-base { position:relative;z-index:1; }
+.durak-character-shirt { display:none;position:absolute;inset:0;z-index:0; }
+.durak-emotion-layer { z-index:2; }
+@supports ((mask-image:linear-gradient(#000,#000)) or (-webkit-mask-image:linear-gradient(#000,#000))) {
+ .durak-character[data-outfit="shirt"] .durak-character-base { -webkit-mask-image:var(--durak-head-mask);mask-image:var(--durak-head-mask);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat; }
+ .durak-character[data-outfit="shirt"] .durak-character-shirt:not([hidden]) { display:block;-webkit-mask-image:var(--durak-shirt-mask);mask-image:var(--durak-shirt-mask);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat; }
+}

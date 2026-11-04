@@ -24,14 +24,14 @@ export function createGameReportManager({bridge,getReport=()=>null,onReportChang
     if(!Object.hasOwn(GAME_REPORT_TITLES,kind))throw Error('Unknown game report');
     const abort=new AbortController(),signal=abort.signal;
     const closed=()=>destroyed||signal.aborted;
-    let element=null,footerElement=null,ownsFooter=false,originKey=null,finishedKey=null,localRecord=null,busy=false,note='',noteKey=null,noteId=null;
+    let element=null,containerElement=null,footerElement=null,ownsFooter=false,originKey=null,finishedKey=null,localRecord=null,busy=false,note='',noteKey=null,noteId=null;
     let liveJournal='',liveCount=0,includeJournal=false,includeId=null,cachedSource=null,cachedRecord=null,activeSend=null;
     const copyTimers=new Map();
     function read(key){try{const source=getReport(key,kind);if(source&&source===cachedSource)return cachedRecord;const record=sanitizeGameReport(source);cachedSource=source;cachedRecord=record;return record;}catch{return localRecord&&finishedKey===key?localRecord:null;}}
     function save(key,record){if(closed())return;localRecord=record;finishedKey=key;onReportChange(key,record);}
     const isSent=record=>typeof bridge.hasGameReport==='function'?bridge.hasGameReport(record.id):record.sent;
     function render(){
-      if(!element||closed())return;
+      if(!element||closed()||containerElement?.hidden||containerElement?.closest?.('[hidden]')||containerElement?.getRootNode?.().host?.style.display==='none')return;
       const state=info(),record=read(state.key),live=liveCount>0&&originKey===state.key;
       // Preferences belong to the game UI, even in a new chat without a report.
       element.hidden=false;
@@ -127,7 +127,7 @@ export function createGameReportManager({bridge,getReport=()=>null,onReportChang
         render();
       },
       attach(container){
-        if(closed())return;
+        if(closed())return;containerElement=container;
         element=document.createElement('section');element.className='game-report';element.hidden=true;
         element.setAttribute('aria-label',`${GAME_REPORT_TITLES[kind]}: результат для чата`);
         element.innerHTML=`<details class="game-report-settings"><summary>Настройки</summary><div class="game-report-settings-body"><details class="game-journal"><summary>Полный журнал партии</summary><div class="game-report-text"><button type="button" class="game-report-copy game-copy-journal" data-report-action="journal" aria-label="Копировать полный журнал" title="Копировать полный журнал">${COPY_ICON}</button><pre></pre></div></details><details class="game-report-preview"><summary>Итог для чата</summary><div class="game-report-text"><button type="button" class="game-report-copy game-copy-summary" data-report-action="summary" aria-label="Копировать последний итог" title="Копировать последний итог">${COPY_ICON}</button><pre></pre></div></details><div class="game-report-controls"><div class="game-report-options"><label title="После добавления итога вызвать обычный ответ персонажа через Таверну"><input type="checkbox" class="game-report-reply"> Ответ персонажа</label><label class="game-report-full-label"><input type="checkbox" class="game-report-full"> Весь журнал в чат</label></div><button type="button" class="game-report-send" data-report-action="send">Отправить в чат</button></div></div></details><p class="game-report-status" role="status" aria-live="polite"></p>`;

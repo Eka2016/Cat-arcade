@@ -1,6 +1,6 @@
-/** Prepare local art one file at a time while games are closed or in the menu.
- * Chosen-game images bypass the queue. Other scenes do not decode during play. */
-export function createGameArtLoader(views,{signal}={}){
+/** Warm only the chosen game by default. Background preloading is opt-in:
+ * a closed arcade must not decode every scene while the user chats. */
+export function createGameArtLoader(views,{signal,background=false}={}){
   const doc=views[0]?.ownerDocument,win=doc?.defaultView,groups=new Map();
   let idle=null,timer=null,started=false,backgroundJobs=0,destroyed=false,busy=false;
   const allowed=area=>area.dataset.characters!=='false';
@@ -46,7 +46,7 @@ export function createGameArtLoader(views,{signal}={}){
     for(const area of views)collect(area);pump();
   }
   function schedule(){
-    if(destroyed||started||idle!==null||timer!==null)return;
+    if(!background||destroyed||started||idle!==null||timer!==null)return;
     if(typeof win?.requestIdleCallback==='function')idle=win.requestIdleCallback(start,{timeout:1200});
     else timer=win?.setTimeout(start,300);
   }

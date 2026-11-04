@@ -27,6 +27,7 @@ export function createGenerationNotice({getContext=()=>globalThis.SillyTavern?.g
     source.on(type,listener);subscriptions.push([type,listener]);
   }
   function observeImageButtons() {
+    if(!imagePending){imageObserver?.disconnect();imageObserver=null;chatElement=null;return;}
     const next=doc?.querySelector?.('#chat');
     if(next===chatElement)return;
     imageObserver?.disconnect();imageObserver=null;chatElement=next;
@@ -39,7 +40,7 @@ export function createGenerationNotice({getContext=()=>globalThis.SillyTavern?.g
       for(const record of records){
         const target=record.target;
         if(target.matches?.('.sd_message_gen')&&record.oldValue?.split(/\s+/).includes('fa-hourglass')&&!target.classList.contains('fa-hourglass')){
-          imagePending=false;complete();break;
+          imagePending=false;observeImageButtons();complete();break;
         }
       }
     });
@@ -59,7 +60,7 @@ export function createGenerationNotice({getContext=()=>globalThis.SillyTavern?.g
     if(!groupDepth&&groupEnded){groupEnded=false;complete();}
   });
   bind('SD_PROMPT_PROCESSING',()=>{
-    imagePending=true;
+    imagePending=true;observeImageButtons();
     // A quiet text request can be just the prompt for a picture that is still rendering.
     if(pendingQuiet)cancelPending();
   });
@@ -68,9 +69,9 @@ export function createGenerationNotice({getContext=()=>globalThis.SillyTavern?.g
     const extra=context()?.chat?.[id]?.extra;
     const generated=extra?.media?.some(item=>item?.source==='generated'&&typeof item.url==='string'&&item.url.length)
       ||(typeof extra?.image==='string'&&extra.image.length&&Number.isInteger(extra.generationType));
-    if(generated){imagePending=false;complete();}
+    if(generated){imagePending=false;observeImageButtons();complete();}
   });
-  bind('FORCE_SET_BACKGROUND',()=>{if(imagePending){imagePending=false;complete();}});
+  bind('FORCE_SET_BACKGROUND',()=>{if(imagePending){imagePending=false;observeImageButtons();complete();}});
   bind('TTS_JOB_COMPLETE',()=>complete());
   bind('APP_READY',observeImageButtons);
   bind('CHAT_CHANGED',()=>{

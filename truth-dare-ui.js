@@ -307,7 +307,7 @@ export function createTruthGame(container,{bridge:provided,getPreset=()=>TRUTH_P
   },{capture:true,signal});
   container.addEventListener('click',e=>{if(lastTouch&&performance.now()-lastTouch.time<900&&(e.isTrusted||e.detail>0)){lastTouch=null;e.preventDefault();e.stopImmediatePropagation();if(e.target.closest('.truth-saved-search-toggle,.truth-saved-search-clear,.truth-collection-search-toggle,.truth-collection-search-clear'))libraryView.focusSearch();return;}activate(e.target);},{capture:true,signal});
   container.addEventListener('input',e=>{if(e.target.matches('.truth-prompt-text')){note='Изменения не сохранены.';$('.truth-prompt-note').textContent=note;$('.truth-prompt-note').hidden=false;}},{signal});
-  const unsubscribe=bridge.subscribe(change=>{if(!destroyed){try{followRename(change);}catch(e){error=textError(e);}render();}});
+  const unsubscribe=bridge.subscribe(change=>{if(!destroyed){try{followRename(change);}catch(e){error=textError(e);}if(visible&&!paused)render();}});
   render();
   return {resume,cancelSelection(){if(mode==='collections')return libraryView.cancelSelection();if(mode!=='cards'||!selection.size)return false;if(deleteSource)deleteSource=null;else clearSelection();render();return true;},pause(){if(destroyed)return;paused=true;cancelHold();touch=null;clock.setActive(false);animation?.pause();render();},hide(){this.pause();visible=false;clearSelection();libraryView.clearSelection();},focus(){$('.truth-prompt-toggle').focus({preventScroll:true});},get stateTag(){return paused?'paused':phase;},destroy(){destroyed=true;serial++;resetCopy();cancelHold();clock.destroy();stopAnimation();unsubscribe();roundList.destroy();libraryView.destroy();if(!provided)bridge.destroy?.();abort.abort();container.replaceChildren();}};
 }

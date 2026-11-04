@@ -201,6 +201,6 @@ export function createWordsGame(container,{progress={},onProgress=()=>{},onChang
     motionChanged();
   }
   motionQuery?.addEventListener?.('change',motionChanged);
-  const unsubscribe=bridge.subscribe(()=>{if(!destroyed)render();});lesson.start();render();
+  const unsubscribe=bridge.subscribe(()=>{if(!destroyed&&visible&&!paused)render();});lesson.start();render();
   return {resume,setCharacterVisible,cancelSelection(){if(mode==='collections')return libraryView.cancelSelection();if(!picked.size)return false;if(deleteConfirm)deleteConfirm=false;else clearPicked();render();return true;},pause(){if(destroyed)return;paused=true;cancelHold();touch=null;render();},hide(){this.pause();visible=false;clearPicked();libraryView.clearSelection();},focus(){(mode==='play'?$('.word-card'):$('.words-preset-toggle')).focus({preventScroll:true});},get stateTag(){return generating?'generating':game.phase==='finished'?'finished':paused?'paused':!lesson.ready?'shuffling':'playing';},destroy(){destroyed=true;serial++;resetCopy();cancelHold();speech.destroy();lesson.destroy();scene.destroy();motionQuery?.removeEventListener?.('change',motionChanged);unsubscribe();list.destroy();libraryView.destroy();if(!providedBridge)bridge.destroy?.();abort.abort();container.replaceChildren();}};
 }

@@ -5,7 +5,7 @@
   "optional": [],
   "js": "index.js",
   "author": "Paw Arcade",
-  "version": "2.35",
+  "version": "3.0.10",
   "auto_update": false,
   "hooks": {
     "activate": "onActivate",
