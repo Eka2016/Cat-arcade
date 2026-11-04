@@ -1,4 +1,4 @@
-export const RECORD_GAMES=Object.freeze({snake:'Змейка',dice:'Кости',poker:'Покер',chess:'Шахматы',checkers:'Шашки',domino:'Домино',words:'Английский'});
+export const RECORD_GAMES=Object.freeze({snake:'Змейка',dice:'Кости',poker:'Покер',chess:'Шахматы',checkers:'Шашки',domino:'Домино',words:'Английский',durak:'Дурак'});
 const count=n=>Number.isFinite(n)?Math.max(0,Math.min(1000000,Math.floor(n))):0;
 /** Bounded numeric totals only: no chat, moves, cards or connection data. */
 export function sanitizeArcadeStats(raw,legacy={}){

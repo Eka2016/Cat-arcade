@@ -4,6 +4,7 @@ import { createDiceGame } from './dice-ui.js';
 import { createPokerGame } from './poker-ui.js';
 import { createBoardGame } from './board-ui.js';
 import { createDominoGame } from './domino-ui.js';
+import { createDurakGame } from './durak-ui.js';
 import { createWordsGame } from './words-ui.js';
 import { sanitizeWordProgress,sanitizeWordRoundSize } from './words.js';
 import {wordPreset,wordSet} from './words-content.js';
@@ -23,6 +24,8 @@ import {sanitizeDndLibrary} from './dnd-library.js';
 import {createGameArtLoader} from './game-art.js';
 import {DND_DIE_STYLES,sanitizeDndDieStyle} from './dnd-numerals.js';
 import {DOMINO_PIECE_STYLES,sanitizeDominoPieceStyle} from './domino-appearance.js';
+import {DURAK_TABLE_STYLES,sanitizeDurakTableStyle,DURAK_OUTFITS,sanitizeDurakOutfit} from './durak-appearance.js';
+import {CHESS_BOARD_STYLES,sanitizeChessBoardStyle} from './chess-appearance.js';
 import {renameChatHistory} from './chat-history.js';
 
 const PAW = `<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="10" cy="15" rx="4" ry="6" transform="rotate(-25 10 15)"/><ellipse cx="18" cy="10" rx="4" ry="6" transform="rotate(-8 18 10)"/><ellipse cx="27" cy="11" rx="4" ry="6" transform="rotate(12 27 11)"/><ellipse cx="33" cy="19" rx="3.5" ry="5.5" transform="rotate(30 33 19)"/><path d="M12 28c0-5 5-11 10-11s10 7 10 12c0 6-6 6-10 4-5 2-10 1-10-5Z"/></svg>`;
@@ -34,6 +37,7 @@ const DICE_ICON = `<svg viewBox="0 0 110 64" aria-hidden="true"><g transform="tr
 const POKER_ICON=`<svg viewBox="0 0 110 64" aria-hidden="true"><g transform="translate(22 7) rotate(-10 19 25)"><rect width="35" height="50" rx="4" fill="#e4ddc9"/><path d="M17 16c-7 8-12 13-12 18 0 6 8 7 12 3 4 4 12 3 12-3 0-5-5-10-12-18Z" fill="#283e32"/></g><g transform="translate(54 6) rotate(9 19 25)"><rect width="35" height="50" rx="4" fill="#f1e8d5"/><path d="m17 15 11 15-11 15L6 30Z" fill="#b0594e"/></g></svg>`;
 
 const MENU_ICONS={
+  durak:'<svg viewBox="0 0 32 32" aria-hidden="true"><g transform="rotate(-14 12 16)"><rect x="3" y="4" width="17" height="24" rx="2.5" fill="#9b6247" stroke="#c4b98a"/><path d="m11.5 9 5 7-5 7-5-7Z" fill="#d8ddba"/></g><g transform="rotate(10 21 16)"><rect x="13" y="4" width="17" height="24" rx="2.5" fill="#eee3c7" stroke="#c4b98a"/><path d="M21.5 10c-3.5 3.4-5.5 5-5.5 7 0 2.8 3.2 3 5.5 1.2C23.8 20 27 19.8 27 17c0-2-2-3.6-5.5-7Z" fill="#594130"/><path d="m21.5 17-2 5h4Z" fill="#594130"/></g></svg>', 
   chess:'<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="paw-menu-knight" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#64756d"/><stop offset=".38" stop-color="#252f2c"/><stop offset="1" stop-color="#0a100e"/></linearGradient></defs><g stroke="#a5b29a" stroke-width=".8" stroke-linejoin="round"><path d="M9.7 24c.1-4.7 2.1-8.3 5.5-11.7l-4.4.6-2.2 2.5-4-2.6 4.9-7.2 4.1-.2 2.2-3.2 1.2 3.5c7.5 2.2 10 9.9 5.3 18.3Z" fill="url(#paw-menu-knight)"/><path d="M9 24h13.5l1.2 2.6H7.8Zm-.9 3h15.2l1.9 2.4H6.2Z" fill="url(#paw-menu-knight)"/></g><path d="M18.2 7.8c5.9 4.4 5.7 10.2 2.3 15.1" fill="none" stroke="#8b9c8a" stroke-width="1.2" stroke-linecap="round"/><path d="m19.8 9.7-1.7 1.1m3.2 1.2-1.9.9m2.6 1.8-2 .5m2.2 2.2-2 .1" stroke="#51675c" stroke-width="1" stroke-linecap="round"/><circle cx="12" cy="8.1" r=".95" fill="#e2dec2"/><path d="m6.6 12 2.3-.2M10 28.1h10.5" fill="none" stroke="#a5b39a" stroke-width=".7" stroke-linecap="round"/></svg>',
   dnd:'<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="paw-menu-d20" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#789a74"/><stop offset=".45" stop-color="#315c47"/><stop offset="1" stop-color="#162c26"/></linearGradient></defs><g stroke="#d5bc83" stroke-width="1" stroke-linejoin="round"><path d="m16 2 13 8-2 14-11 6L5 24 3 10Z" fill="url(#paw-menu-d20)"/><path d="M16 7 7 23h18ZM16 2v5M3 10l13-3 13 3M3 10l4 13-2 1M29 10l-4 13 2 1M7 23l9 7 9-7" fill="none"/></g><text x="16" y="20.2" text-anchor="middle" fill="#f0d8a4" font-family="Georgia,serif" font-size="8" font-weight="700">20</text></svg>',
   checkers:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="9" cy="16.5" rx="7.5" ry="5.2" fill="#956044"/><ellipse cx="9" cy="14" rx="7.5" ry="5.2" fill="#e8bb7e"/><ellipse cx="9" cy="14" rx="5" ry="3.3" fill="none" stroke="#ae784d"/><ellipse cx="15.2" cy="10" rx="7.2" ry="5.1" fill="#315e54"/><ellipse cx="15.2" cy="7.6" rx="7.2" ry="5.1" fill="#89b5a1"/><ellipse cx="15.2" cy="7.6" rx="4.8" ry="3.2" fill="none" stroke="#4c7a69"/></svg>',
@@ -43,14 +47,15 @@ const MENU_ICONS={
 };
 
 const EXTRA_GAMES=[
+  {id:'durak',title:'Дурак',description:'Подкидной · один на один.',symbol:'♠'},
   {id:'chess',title:'Шахматы',description:'Ваш ход, белые.',symbol:'♞'},
   {id:'checkers',title:'Шашки',description:'Русские · 8 × 8.',symbol:'◉'},
   {id:'domino',title:'Домино',description:'Собери цепочку.',symbol:'⚂'},
-  {id:'dnd',title:'ДНД · d20',description:'Событие для истории.',symbol:'20'},
   {id:'words',title:'Английский',description:'Слова, примеры и повторение.',symbol:'Aa'},
+  {id:'dnd',title:'ДНД · d20',description:'Событие для истории.',symbol:'20'},
   {id:'truth',title:'Правда / действие',description:'Карточки и жетон.',symbol:'◇'},
 ];
-const CHARACTER_GAMES={dice:'Кости',poker:'Покер',chess:'Шахматы',checkers:'Шашки',words:'Английский',domino:'Домино'};
+const CHARACTER_GAMES={dice:'Кости',poker:'Покер',chess:'Шахматы',checkers:'Шашки',words:'Английский',domino:'Домино',durak:'Дурак'};
 
 export function sanitizeSettings(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
@@ -85,6 +90,9 @@ export function sanitizeSettings(raw) {
     dndPreset: sanitizeDndPreset(value.dndPreset),
     dndDieStyle: sanitizeDndDieStyle(value.dndDieStyle),
     dominoPieceStyle: sanitizeDominoPieceStyle(value.dominoPieceStyle),
+    durakTableStyle: sanitizeDurakTableStyle(value.durakTableStyle),
+    durakOutfit: sanitizeDurakOutfit(value.durakOutfit),
+    chessBoardStyle: sanitizeChessBoardStyle(value.chessBoardStyle),
     dndLibrary: sanitizeDndLibrary(value.dndLibrary),
     truthPreset: truthPreset(value.truthPreset),
     truthRounds: truthRounds(value.truthRounds),
@@ -95,11 +103,12 @@ export function sanitizeSettings(raw) {
     characters: Object.fromEntries(Object.keys(CHARACTER_GAMES).map(kind=>[kind,value.characters?.[kind]!==false])),
     chessDifficulty: sanitizeBoardDifficulty(value.chessDifficulty),
     checkersDifficulty: sanitizeBoardDifficulty(value.checkersDifficulty),
+    durakDifficulty: sanitizeBoardDifficulty(value.durakDifficulty),
   };
 }
 
 /** Mounts the same UI in SillyTavern and in the bundled offline demo. */
-export function createArcade({ load = () => ({}), save = () => {}, cssText, diceSceneUrl, diceCharacterUrl, diceTableUrl, dndSceneUrl, dndDieUrl, dndNumeralsUrl, dndSymbolsUrl, dndWoodDieUrl, dndWoodNumeralsUrl, dndWoodSymbolsUrl, pokerSceneUrl, pokerCharacterUrl, pokerTableUrl, chessSceneUrl, chessCharacterUrl, chessWorkerUrl, checkersWorkerUrl, checkersSceneUrl, checkersCharacterUrls,checkersWoodUrl, wordsSceneUrl, wordsCharacterUrl, wordsTableUrl, dominoSceneUrl, dominoFrontUrl, dominoBackUrl, dominoGreenFrontUrl, dominoGreenBackUrl, dominoHomeUrl, dominoEmotionUrls, storyBridge } = {}) {
+export function createArcade({ load = () => ({}), save = () => {}, cssText, diceSceneUrl, diceCharacterUrl, diceTableUrl, dndSceneUrl, dndDieUrl, dndNumeralsUrl, dndSymbolsUrl, dndWoodDieUrl, dndWoodNumeralsUrl, dndWoodSymbolsUrl, pokerSceneUrl, pokerCharacterUrl, pokerTableUrl, chessSceneUrl, chessCharacterUrl, chessWorkerUrl, chessWoodUrl, checkersWorkerUrl, checkersSceneUrl, checkersCharacterUrls,checkersWoodUrl, wordsSceneUrl, wordsCharacterUrl, wordsTableUrl, dominoSceneUrl, dominoFrontUrl, dominoBackUrl, dominoGreenFrontUrl, dominoGreenBackUrl, dominoHomeUrl, dominoEmotionUrls, durakSceneUrl, durakTableUrl, durakCharacterUrl, durakEmotionUrls, storyBridge } = {}) {
   const old = document.getElementById('paw-arcade-root');
   if (old) throw new Error('Paw Arcade is already mounted');
   let settings,legacyDndHistory=false;
@@ -130,12 +139,14 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
         </button>
         <button class="game-card dice-card" type="button"><span class="card-illustration">${DICE_ICON}<span class="card-badge">02</span></span><span class="card-body"><span class="card-title">Кости</span><span class="card-description">Рискнуть или забрать?</span></span></button>
         <button class="game-card poker-card" type="button"><span class="card-illustration">${POKER_ICON}<span class="card-badge">03</span></span><span class="card-body"><span class="card-title">Покер</span><span class="card-description">Холдем один на один.</span></span></button>
-        ${EXTRA_GAMES.map((g,i)=>`<button class="game-card ${g.id}-card" type="button"><span class="card-illustration">${MENU_ICONS[g.id]||`<span class="game-symbol" aria-hidden="true">${g.symbol}</span>`}<span class="card-badge">0${i+4}</span></span><span class="card-body"><span class="card-title">${g.title}</span><span class="card-description">${g.description}</span></span></button>`).join('')}</div>
+        ${EXTRA_GAMES.map((g,i)=>`<button class="game-card ${g.id}-card" type="button"><span class="card-illustration">${MENU_ICONS[g.id]||`<span class="game-symbol" aria-hidden="true">${g.symbol}</span>`}<span class="card-badge">${String(i+4).padStart(2,'0')}</span></span><span class="card-body"><span class="card-title">${g.title}</span><span class="card-description">${g.description}</span></span></button>`).join('')}</div>
         <details class="arcade-options"><summary>Настройки чата</summary><div class="arcade-options-body"><label class="speed-label"><span>Змейка</span><select class="snake-speed" aria-label="Темп новой партии змейки"><option value="calm">Спокойный</option><option value="normal">Обычный</option><option value="fast">Быстрый</option></select></label>
         <label class="speed-label"><span>Отправитель в чат</span><select class="chat-sender" aria-label="От чьего имени отправлять игровые сообщения" title="Для итогов партий, событий ДНД и карточек «Правда или действие»">${Object.entries(CHAT_SENDERS).map(([value,title])=>`<option value="${value}">${title}</option>`).join('')}</select></label>
         <label class="speed-label"><span>Кубик d20</span><select class="dnd-die-style" aria-label="Внешний вид кубика ДНД">${Object.entries(DND_DIE_STYLES).map(([value,title])=>`<option value="${value}">${title}</option>`).join('')}</select></label><p class="dnd-die-style-status" role="status" hidden></p>
         <label class="speed-label"><span>Костяшки домино</span><select class="domino-piece-style" aria-label="Скин костяшек домино">${Object.entries(DOMINO_PIECE_STYLES).map(([value,title])=>`<option value="${value}">${title}</option>`).join('')}</select></label><p class="domino-piece-style-status" role="status" hidden></p>
-        <details class="character-options"><summary>Персонажи</summary><div class="character-options-list">${Object.entries(CHARACTER_GAMES).map(([kind,title])=>`<label class="character-option"><span>${title}</span><input type="checkbox" data-character-game="${kind}" checked></label>`).join('')}</div><p class="character-options-status" role="status" hidden></p></details>
+        <label class="speed-label"><span>Стол дурака</span><select class="durak-table-style" aria-label="Дизайн стола дурака">${Object.entries(DURAK_TABLE_STYLES).map(([value,title])=>`<option value="${value}">${title}</option>`).join('')}</select></label><p class="durak-table-style-status" role="status" hidden></p>
+        <label class="speed-label"><span>Шахматная доска</span><select class="chess-board-style" aria-label="Дизайн шахматной доски">${Object.entries(CHESS_BOARD_STYLES).map(([value,title])=>`<option value="${value}">${title}</option>`).join('')}</select></label><p class="chess-board-style-status" role="status" hidden></p>
+        <details class="character-options"><summary>Персонажи</summary><div class="character-options-list">${Object.entries(CHARACTER_GAMES).map(([kind,title])=>`<label class="character-option"><span>${title}</span><input type="checkbox" data-character-game="${kind}" checked></label>`).join('')}<label class="speed-label durak-outfit-label"><span>Дурак: одежда</span><select class="durak-outfit" aria-label="Одежда персонажа в дураке">${Object.entries(DURAK_OUTFITS).map(([value,title])=>`<option value="${value}">${title}</option>`).join('')}</select></label></div><p class="character-options-status" role="status" hidden></p></details>
         </div></details>
         <details class="arcade-records"><summary>Рекорды</summary><label class="arcade-record-picker"><span>Игра</span><select class="arcade-record-select" aria-label="Рекорды какой игры">${Object.entries(RECORD_GAMES).map(([kind,title])=>`<option value="${kind}">${title}</option>`).join('')}</select></label><div class="arcade-records-list">${Object.entries(RECORD_GAMES).map(([kind,title])=>`<section class="arcade-record-row" data-record-game="${kind}"><div class="arcade-record-heading"><strong>${title}</strong><span class="arcade-record-best"></span></div><div class="arcade-record-counts"><span>Победы <b data-record-count="wins">0</b></span><span>Поражения <b data-record-count="losses">0</b></span><span class="arcade-record-draws">Ничьи <b data-record-count="draws">0</b></span></div><p class="arcade-record-note"></p></section>`).join('')}</div><p class="arcade-record-status" hidden role="status"></p></details>
       </div>
@@ -174,6 +185,7 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
   let artLoader=null;
   const gameUIs=new Map();
   const chatBridge=storyBridge||createDemoStoryBridge();
+  chatBridge.setActive?.(false);
   let renameSavePending=false;
   // Subscribe before views so they restore the new key, including when a game
   // is hidden. On a native storage error keep the moved data in memory and
@@ -240,7 +252,7 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
       onLibrarySetChange(library,set){const previousLibrary=settings.wordLibrary,previousSet=settings.wordSet,previousSource=settings.wordSource;settings.wordLibrary=sanitizeWordLibrary(library);settings.wordSet=wordSet(set);settings.wordSource=settings.wordSet?'current':'all';if(!persist()){settings.wordLibrary=previousLibrary;settings.wordSet=previousSet;settings.wordSource=previousSource;throw Error('Word batch storage unavailable');}},
       onPreferencesChange({source,direction}){const previousSource=settings.wordSource,previousMode=settings.wordMode;settings.wordSource=source;settings.wordMode=direction;if(!persist()){settings.wordSource=previousSource;settings.wordMode=previousMode;throw Error('Word preferences storage unavailable');}},
       onProgress(progress){const previous=settings.wordProgress;settings.wordProgress=sanitizeWordProgress(progress);if(!persist()){settings.wordProgress=previous;throw Error('Word progress storage unavailable');}}
-    }):extra.id==='domino'?createDominoGame($('.domino-view'),{sceneUrl:dominoSceneUrl,frontUrl:dominoFrontUrl,backUrl:dominoBackUrl,greenFrontUrl:dominoGreenFrontUrl,greenBackUrl:dominoGreenBackUrl,homeUrl:dominoHomeUrl,emotionUrls:dominoEmotionUrls,pieceStyle:settings.dominoPieceStyle,characterVisible:settings.characters.domino,onChange,...reportHooks('domino')}):createBoardGame($(`.${extra.id}-view`),{kind:extra.id,onChange,...reportHooks(extra.id),...boardOptions,...(extra.id==='chess'?{sceneUrl:chessSceneUrl,characterUrl:chessCharacterUrl,workerUrl:chessWorkerUrl}:{sceneUrl:checkersSceneUrl,characterUrls:checkersCharacterUrls,woodUrl:checkersWoodUrl,workerUrl:checkersWorkerUrl})});
+    }):extra.id==='durak'?createDurakGame($('.durak-view'),{onChange,...reportHooks('durak'),...boardOptions,sceneUrl:durakSceneUrl,tableUrl:durakTableUrl,characterUrl:durakCharacterUrl,emotionUrls:durakEmotionUrls,tableStyle:settings.durakTableStyle,characterVisible:settings.characters.durak,outfit:settings.durakOutfit,onOutfitError(){settings.durakOutfit='sweater';persist();const status=$('.character-options-status');status.hidden=false;status.textContent='Не удалось загрузить рубашку. Оставлена синяя кофта.';render();}}):extra.id==='domino'?createDominoGame($('.domino-view'),{sceneUrl:dominoSceneUrl,frontUrl:dominoFrontUrl,backUrl:dominoBackUrl,greenFrontUrl:dominoGreenFrontUrl,greenBackUrl:dominoGreenBackUrl,homeUrl:dominoHomeUrl,emotionUrls:dominoEmotionUrls,pieceStyle:settings.dominoPieceStyle,characterVisible:settings.characters.domino,onChange,...reportHooks('domino')}):createBoardGame($(`.${extra.id}-view`),{kind:extra.id,onChange,...reportHooks(extra.id),...boardOptions,...(extra.id==='chess'?{sceneUrl:chessSceneUrl,characterUrl:chessCharacterUrl,workerUrl:chessWorkerUrl,woodUrl:chessWoodUrl,boardStyle:settings.chessBoardStyle}:{sceneUrl:checkersSceneUrl,characterUrls:checkersCharacterUrls,woodUrl:checkersWoodUrl,workerUrl:checkersWorkerUrl})});
     gameUIs.set(extra.id,ui);
   }
   function applyCharacterSetting(kind){
@@ -252,7 +264,7 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
   }
   for(const kind of Object.keys(CHARACTER_GAMES))applyCharacterSetting(kind);
   artLoader=createGameArtLoader([...gameUIs.keys()].map(kind=>$(`.${kind}-view`)),{signal});
-  for(const kind of ['dice','poker','chess','checkers','domino']){
+  for(const kind of ['dice','poker','chess','checkers','domino','durak']){
     const area=$(`.${kind}-view`);gameReports.channel(kind).attach(area);
     let options=gameUIs.get(kind)?.settingsElement;
     if(kind==='dice'){options=document.createElement('div');options.className='dice-options';options.innerHTML='<label class="speed-label"><span>Цель партии</span><select class="dice-target" aria-label="Цель новой партии в кости" title="Изменение цели начинает новую партию"><option value="1500">1500 · короткая</option><option value="4000">4000 · обычная</option><option value="6000">6000 · длинная</option></select></label>';}
@@ -383,6 +395,7 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
   }
 
   function pause() {
+    chatBridge.setActive?.(false);
     clearTimer();
     game.pause();
     for(const ui of gameUIs.values())ui.pause();
@@ -449,7 +462,7 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
       const best=row.querySelector('.arcade-record-best'),note=row.querySelector('.arcade-record-note');
       best.textContent=kind==='snake'?`Яблок: ${Math.max(...Object.values(settings.records))}`:kind==='words'?(entry.bestTotal?`${entry.bestCorrect} / ${entry.bestTotal} с первого раза`:'Пока нет раундов'):`Побед подряд: ${entry.bestStreak}`;
       for(const field of ['wins','losses','draws'])row.querySelector(`[data-record-count="${field}"]`).textContent=String(entry[field]);
-      row.querySelector('.arcade-record-draws').hidden=!['chess','checkers','domino'].includes(kind);
+      row.querySelector('.arcade-record-draws').hidden=!['chess','checkers','domino','durak'].includes(kind);
       note.textContent=kind==='snake'?`Спокойный ${settings.records.calm} · Обычный ${settings.records.normal} · Быстрый ${settings.records.fast}`:kind==='words'?'Победа: от 70% слов с первой попытки.':kind==='poker'?'Учитываются завершённые матчи.':'';
       note.hidden=!note.textContent;
     }
@@ -466,6 +479,9 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
     $('.chat-sender').value=settings.gameSender;
     $('.dnd-die-style').value=settings.dndDieStyle;
     $('.domino-piece-style').value=settings.dominoPieceStyle;
+    $('.durak-table-style').value=settings.durakTableStyle;
+    $('.durak-outfit').value=settings.durakOutfit;
+    $('.chess-board-style').value=settings.chessBoardStyle;
     renderRecords();
     const overlay = $('.board-overlay');
     overlay.hidden = game.status === 'running';
@@ -483,6 +499,10 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
     requestLayout();
   }
 
+  function wakeChatViews(){
+    const needsChat=open&&view!=='menu'&&(['dnd','truth','words'].includes(view)||!!root.querySelector(`.${view}-view .game-report-settings[open]`));
+    chatBridge.setActive?.(needsChat&&!document.hidden);
+  }
   function show(next = 'menu') {
     if (!settings.enabled) return;
     artLoader.setBusy(next!=='menu');
@@ -505,7 +525,7 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
     artLoader.warm($(`.${next}-view`));
     panel.setAttribute('aria-label', EXTRA_GAMES.find(g=>g.id===next)?.title||(next === 'snake' ? 'Змейка' : next==='dice'?'Кости':next==='poker'?'Покер':'Кошачья аркада'));
     launcher.setAttribute('aria-expanded', 'true');
-    render(); layout();
+    wakeChatViews();gameReports.refresh();render();layout();
     if (next === 'snake') {
       if (['ready', 'paused'].includes(game.status)) play();
       else board.focus({ preventScroll: true });
@@ -632,6 +652,24 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
     const status=$('.dnd-die-style-status');status.hidden=saved;status.textContent=saved?'':'Не удалось сохранить вид кубика. Попробуйте ещё раз.';
     render();requestLayout();
   },{signal});
+  $('.chess-board-style').addEventListener('change',e=>{
+    if(!Object.hasOwn(CHESS_BOARD_STYLES,e.target.value)){render();return;}
+    if(e.target.value===settings.chessBoardStyle)return;
+    const previous=settings.chessBoardStyle;settings.chessBoardStyle=e.target.value;
+    const saved=persist();if(!saved)settings.chessBoardStyle=previous;
+    if(saved)gameUIs.get('chess').setBoardStyle(settings.chessBoardStyle);
+    const status=$('.chess-board-style-status');status.hidden=saved;status.textContent=saved?'':'Не удалось сохранить дизайн доски. Попробуйте ещё раз.';
+    render();requestLayout();
+  },{signal});
+  $('.durak-table-style').addEventListener('change',e=>{
+    if(!Object.hasOwn(DURAK_TABLE_STYLES,e.target.value)){render();return;}
+    if(e.target.value===settings.durakTableStyle)return;
+    const previous=settings.durakTableStyle;settings.durakTableStyle=e.target.value;
+    const saved=persist();if(!saved)settings.durakTableStyle=previous;
+    if(saved)gameUIs.get('durak').setTableStyle(settings.durakTableStyle);
+    const status=$('.durak-table-style-status');status.hidden=saved;status.textContent=saved?'':'Не удалось сохранить дизайн стола. Попробуйте ещё раз.';
+    render();requestLayout();
+  },{signal});
   $('.domino-piece-style').addEventListener('change',e=>{
     if(!Object.hasOwn(DOMINO_PIECE_STYLES,e.target.value)){render();return;}
     if(e.target.value===settings.dominoPieceStyle)return;
@@ -639,6 +677,14 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
     const saved=persist();if(!saved)settings.dominoPieceStyle=previous;
     if(saved)gameUIs.get('domino').setPieceStyle(settings.dominoPieceStyle);
     const status=$('.domino-piece-style-status');status.hidden=saved;status.textContent=saved?'':'Не удалось сохранить скин домино. Попробуйте ещё раз.';
+    render();requestLayout();
+  },{signal});
+  $('.durak-outfit').addEventListener('change',e=>{
+    const next=sanitizeDurakOutfit(e.target.value);if(next===settings.durakOutfit)return;
+    const previous=settings.durakOutfit;settings.durakOutfit=next;
+    const saved=persist();if(!saved)settings.durakOutfit=previous;
+    if(saved)gameUIs.get('durak').setOutfit(next);
+    const status=$('.character-options-status');status.hidden=saved;status.textContent=saved?'':'Не удалось сохранить одежду. Попробуйте ещё раз.';
     render();requestLayout();
   },{signal});
   $('.character-options').addEventListener('change',e=>{
@@ -714,6 +760,8 @@ export function createArcade({ load = () => ({}), save = () => {}, cssText, dice
   window.visualViewport?.addEventListener('resize', requestLayout, { signal });
   window.visualViewport?.addEventListener('scroll', requestLayout, { signal });
   // Clicks stay inside the widget instead of reaching host UI click shortcuts.
+  for(const type of ['pointerdown','keydown'])root.addEventListener(type,e=>{if(e.target!==launcher)wakeChatViews();},{capture:true,signal});
+  root.addEventListener('toggle',wakeChatViews,{capture:true,signal});
   root.addEventListener('click', e => e.stopPropagation(), { signal });
   root.addEventListener('contextmenu', e => {
     if (e.target.closest('.launcher')) {
